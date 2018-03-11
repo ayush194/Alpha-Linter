@@ -4,3 +4,4 @@ go:
   - 1.9
   #- master
 script: go test -v ./...
+os: osx

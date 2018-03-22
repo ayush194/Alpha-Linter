@@ -23,10 +23,10 @@ func Test(t *testing.T) {
 		name string
 		node fs.Node
 	}{
-		{root, "hellofile", *hellofile},
+		{root, "hellofile", hellofile},
 		{root, "newfs", nil},
-		{hellodir, "hellodir2", *hellodir2},
-		{hellodir, "hellofile2", *hellofile2},
+		{hellodir, "hellodir2", hellodir2},
+		{hellodir, "hellofile2", hellofile2},
 		{hellodir, "newdir", nil},
 		{hellodir2, "hellodir2", nil},
 		{hellodir2, "", nil},

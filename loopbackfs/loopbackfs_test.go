@@ -16,13 +16,13 @@ func Test(t *testing.T) {
 		name string
 		node fs.Node
 	}{
-		{&dir{"testdir"}, "file1.txt", file{"testdir/file1.txt"}},
+		{&dir{"testdir"}, "file1.txt", &file{"testdir/file1.txt"}},
 		{&dir{"testdir"}, "file2.txt", nil},
-		{&dir{"testdir"}, "dir1", dir{"testdir/dir1"}},
+		{&dir{"testdir"}, "dir1", &dir{"testdir/dir1"}},
 		{&dir{"testdir"}, "somedir", nil},
-		{&dir{"testdir/dir1"}, "dir4", dir{"testdir/dir1/dir4"}},
+		{&dir{"testdir/dir1"}, "dir4", &dir{"testdir/dir1/dir4"}},
 		{&dir{"testdir/dir1"}, "dir5", nil},
-		{&dir{"testdir/dir1"}, "file2.txt", file{"testdir/dir1/file2.txt"}},
+		{&dir{"testdir/dir1"}, "file2.txt", &file{"testdir/dir1/file2.txt"}},
 		{&dir{"testdir/dir3"}, "file3.txt", nil},
 		{&dir{"testdir/dir3/dir6"}, "somefile.txt", nil},
 	}
@@ -38,13 +38,14 @@ func Test(t *testing.T) {
 		dirs []fuse.Dirent
 	}{
 		{&dir{"testdir"}, []fuse.Dirent{{Name: "dir1", Type: fuse.DT_Dir}, {Name: "dir2", Type: fuse.DT_Dir},
-			{Name: "dir3", Type: fuse.DT_Dir}, {Name: "file1.txt", Type: fuse.DT_File}, {Name: ".DS_Store", Type: fuse.DT_File}}},
-		{&dir{"testdir/dir1"}, []fuse.Dirent{{Name: "dir4", Type: fuse.DT_Dir}, {Name: "file2.txt", Type: fuse.DT_File},
-			{Name: ".DS_Store", Type: fuse.DT_File}}},
-		{&dir{"testdir/dir2"}, []fuse.Dirent{{Name: "dir5", Type: fuse.DT_Dir}, {Name: ".DS_Store", Type: fuse.DT_File}}},
-		{&dir{"testdir/dir2/dir5"}, []fuse.Dirent{}},
-		{&dir{"testdir/dir3"}, []fuse.Dirent{{Name: "dir6", Type: fuse.DT_Dir}, {Name: "dir7", Type: fuse.DT_Dir}, {Name: ".DS_Store", Type: fuse.DT_File}}},
-		{&dir{"testdir/dir3/dir7"}, []fuse.Dirent{}},
+			{Name: "dir3", Type: fuse.DT_Dir}, {Name: "file1.txt", Type: fuse.DT_File}}},
+		{&dir{"testdir/dir1"}, []fuse.Dirent{{Name: "dir4", Type: fuse.DT_Dir}, {Name: "file2.txt", Type: fuse.DT_File}}},
+		{&dir{"testdir/dir1/dir4"}, []fuse.Dirent{{Name: "test.png", Type: fuse.DT_File}}},
+		{&dir{"testdir/dir2"}, []fuse.Dirent{{Name: "dir5", Type: fuse.DT_Dir}}},
+		{&dir{"testdir/dir2/dir5"}, []fuse.Dirent{{Name: "file1.txt", Type: fuse.DT_Link}}},
+		{&dir{"testdir/dir3"}, []fuse.Dirent{{Name: "dir6", Type: fuse.DT_Dir}, {Name: "dir7", Type: fuse.DT_Dir}}},
+		{&dir{"testdir/dir3/dir6"}, []fuse.Dirent{{Name: "a.out", Type: fuse.DT_File}}},
+		{&dir{"testdir/dir3/dir7"}, []fuse.Dirent{{Name: ".testrc", Type: fuse.DT_File}}},
 	}
 
 	for _, testcase := range readdirall_tester {
@@ -64,4 +65,28 @@ func Test(t *testing.T) {
 			}
 		}
 	}
+
+	readlink_tester := []struct {
+		f      *file
+		req    *fuse.ReadlinkRequest
+		target string
+	}{
+		{&file{"testdir/dir2/dir5/file1.txt"}, &fuse.ReadlinkRequest{}, "../../file1.txt"},
+	}
+
+	for _, testcase := range readlink_tester {
+		res, _ := (testcase.f).Readlink(ctx, testcase.req)
+		if res != testcase.target {
+			t.Errorf("Readlink() returned bad value, expected %v, got %v", testcase.target, res)
+		}
+	}
+	/*
+		open_file, _ := os.
+		write_tester := []struct {
+			fh *filehandle
+			req *fuse.WriteRequest
+		}{
+			{}
+		}
+	*/
 }

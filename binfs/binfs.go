@@ -30,7 +30,7 @@ func main() {
 	hellodir2 := &dir{"hellodir2", 5, os.ModeDir | 0777, nil, nil}
 	hellodir := &dir{"hellodir", 2, os.ModeDir | 0777, hellodir2, hellofile2}
 	root := &dir{"rootdir", 1, os.ModeDir | 0777, hellodir, hellofile}
-	newfs := filesys{"Ayush", root}
+	newfs := &filesys{"Ayush", root}
 
 	defer c.Close()
 	fs.Serve(c, newfs)
@@ -66,22 +66,22 @@ type file struct {
 }
 
 //dir implements node and handle
-func (d dir) Attr(ctx context.Context, attr *fuse.Attr) error {
+func (d *dir) Attr(ctx context.Context, attr *fuse.Attr) error {
 	attr.Inode = d.inode
 	attr.Mode = d.mode
 	return nil
 }
 
-func (d dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
+func (d *dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	if d.nextdir != nil && name == d.nextdir.name {
-		return *(d.nextdir), nil
+		return d.nextdir, nil
 	} else if d.nextfile != nil && name == d.nextfile.name {
-		return *(d.nextfile), nil
+		return d.nextfile, nil
 	}
 	return nil, fuse.ENOENT
 }
 
-func (d dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
+func (d *dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	a := []fuse.Dirent{}
 	if d.nextdir != nil {
 		a = append(a, fuse.Dirent{Inode: d.nextdir.inode, Name: d.nextdir.name, Type: fuse.DT_Dir})
@@ -92,38 +92,38 @@ func (d dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	return a, nil
 }
 
-func (d dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
+func (d *dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
 	d.nextdir = &dir{"sub" + req.Name, d.inode + 2, req.Mode, nil, nil}
-	return *(d.nextdir), nil
+	return d.nextdir, nil
 }
 
-func (f file) Rename(ctx context.Context, req *fuse.RenameRequest, newFile file) error {
+func (f *file) Rename(ctx context.Context, req *fuse.RenameRequest, newFile file) error {
 	f.name = req.NewName
 	//d.nextdir = newDir
 	return nil
 }
 
-func (f file) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
+func (f *file) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
 	f.content = string(req.Data)
 	resp.Size = 1000
 	return nil
 }
 
 //file implements node and handle
-func (f file) Attr(ctx context.Context, attr *fuse.Attr) error {
+func (f *file) Attr(ctx context.Context, attr *fuse.Attr) error {
 	attr.Inode = f.inode
 	attr.Mode = f.mode
 	attr.Size = f.size
 	return nil
 }
 
-func (f file) ReadAll(ctx context.Context) ([]byte, error) {
+func (f *file) ReadAll(ctx context.Context) ([]byte, error) {
 	return []byte(f.content), nil
 }
 
 //filesys implements FS
-func (f filesys) Root() (fs.Node, error) {
-	return *(f.rootdir), nil
+func (f *filesys) Root() (fs.Node, error) {
+	return f.rootdir, nil
 }
 
 /*
